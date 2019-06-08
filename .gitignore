@@ -1,0 +1,16 @@
+Binaries
+Content/KiteDemo/
+Content/PN_OpenWorldFoliage/
+DerivedDataCache
+Intermediate
+Saved
+.vscode
+.vs
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
