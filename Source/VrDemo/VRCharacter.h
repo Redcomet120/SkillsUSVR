@@ -25,6 +25,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class USceneComponent* VRRoot;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	class UStaticMeshComponent* DestinationMarker;
+
+	UPROPERTY(EditAnywhere)
+	float MaxTeleportDistance = 1000;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -35,6 +41,8 @@ public:
 private:
 	void MoveForward(float throttle);
 	void MoveRight(float throttle);
+	
+	void UpdateDestinationMarker();
 
 	
 };
