@@ -28,8 +28,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UStaticMeshComponent* DestinationMarker;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Teleport")
 	float MaxTeleportDistance = 1000;
+
+	UPROPERTY(EditAnywhere, Category = "Teleport")
+		float TeleportFadeTime = 2;
 
 public:	
 	// Called every frame
@@ -44,5 +47,6 @@ private:
 	
 	void UpdateDestinationMarker();
 
-	
+	void BeginTeleport();
+	void EndTeleport();
 };
