@@ -22,6 +22,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UCameraComponent* Camera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	class USceneComponent* VRRoot;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
