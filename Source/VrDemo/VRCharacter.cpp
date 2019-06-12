@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 #include "Components/CapsuleComponent.h"
+#include "NavigationSystem.h"
 
 
 // Sets default values
@@ -68,21 +69,39 @@ void AVRCharacter::MoveRight(float throttle) {
 
 void AVRCharacter::UpdateDestinationMarker() {
 	
-	FHitResult HitResult;
 	
+	FVector TeleportLoc;
+		if(FindTeleportDestination(TeleportLoc)){
+			DestinationMarker->SetVisibility(true);
+			DestinationMarker->SetWorldLocation(TeleportLoc);
+		}
+		else {
+			DestinationMarker->SetVisibility(false);
+		}
+}
+
+bool AVRCharacter::FindTeleportDestination(FVector &OutLocation) {
+	FHitResult HitResult;
+
 	FVector Start = Camera->GetComponentLocation();
 	FVector End = Start + Camera->GetForwardVector() * MaxTeleportDistance;
 
 	//DrawDebugLine(GetWorld(), Start, End, FColor(255, 0, 0));
 	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+	if (!bHit) {
+		return bHit;
+	}
 
-	if (bHit) {
-		DestinationMarker->SetVisibility(true);
-		DestinationMarker->SetWorldLocation(HitResult.Location);
+	const UNavigationSystemV1* navSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+	FNavLocation NavLocation;
+
+	bool bOnNavMesh = navSystem->ProjectPointToNavigation(HitResult.Location, NavLocation, TeleportProjectionExtent);
+	if (!bOnNavMesh) {
+		return bOnNavMesh;
 	}
-	else {
-		DestinationMarker->SetVisibility(false);
-	}
+
+	OutLocation = NavLocation.Location;
+	return bOnNavMesh && bHit;
 }
 
 void AVRCharacter::BeginTeleport() {

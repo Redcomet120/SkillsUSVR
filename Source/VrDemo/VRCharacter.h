@@ -34,7 +34,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 		float TeleportFadeTime = 2;
 
-public:	
+	UPROPERTY(EditAnywhere, Category = "Teleport")
+		FVector TeleportProjectionExtent = FVector(100, 100, 100);
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -49,4 +51,6 @@ private:
 
 	void BeginTeleport();
 	void EndTeleport();
+
+	bool FindTeleportDestination(FVector &OutLocation);
 };
