@@ -63,7 +63,9 @@ private:
 
 	void BeginTeleport();
 	void EndTeleport();
+	
 	void UpdateBlinders();
+	FVector2D GetBlinderCenter();
 
 	bool FindTeleportDestination(FVector &OutLocation);
 };
