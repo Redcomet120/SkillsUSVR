@@ -37,6 +37,9 @@ protected:
 	UPROPERTY()
 		class UMaterialInstanceDynamic* BlinderMaterialInstance;
 
+	UPROPERTY(EditAnywhere)
+		class UCurveFloat* RadiusVsVelocity;
+
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 	float MaxTeleportDistance = 1000;
 
@@ -60,6 +63,7 @@ private:
 
 	void BeginTeleport();
 	void EndTeleport();
+	void UpdateBlinders();
 
 	bool FindTeleportDestination(FVector &OutLocation);
 };

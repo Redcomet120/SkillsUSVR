@@ -11,6 +11,7 @@
 #include "NavigationSystem.h"
 #include "Components/PostProcessComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Curves/CurveFloat.h"
 
 
 // Sets default values
@@ -40,8 +41,6 @@ void AVRCharacter::BeginPlay()
 	if (BlinderMaterialBase != NULL) {
 		BlinderMaterialInstance = UMaterialInstanceDynamic::Create(BlinderMaterialBase, this);
 		PostProcessComponent->AddOrUpdateBlendable(BlinderMaterialInstance);
-
-		BlinderMaterialInstance->SetScalarParameterValue(TEXT("Radius"),0.25);
 	}
 	
 }
@@ -59,6 +58,7 @@ void AVRCharacter::Tick(float DeltaTime)
 	VRRoot->AddWorldOffset(-NewCamOffset);
 
 	UpdateDestinationMarker();
+	UpdateBlinders();
 }
 
 // Called to bind functionality to input
@@ -91,6 +91,16 @@ void AVRCharacter::UpdateDestinationMarker() {
 			DestinationMarker->SetVisibility(false);
 		}
 }
+
+void AVRCharacter::UpdateBlinders() {
+	if (RadiusVsVelocity != nullptr) {
+		float Velocity = GetVelocity().Size();
+		float Radius = RadiusVsVelocity->GetFloatValue(Velocity);
+
+		BlinderMaterialInstance->SetScalarParameterValue(TEXT("Radius"), Radius);
+	}
+}
+	
 
 bool AVRCharacter::FindTeleportDestination(FVector &OutLocation) {
 	FHitResult HitResult;
