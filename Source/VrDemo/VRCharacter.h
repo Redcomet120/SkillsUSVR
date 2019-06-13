@@ -19,14 +19,23 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UCameraComponent* Camera;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneComponent* VRRoot;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* DestinationMarker;
+
+	UPROPERTY()
+		class UPostProcessComponent* PostProcessComponent;
+
+	UPROPERTY(EditAnywhere)
+		class UMaterialInterface* BlinderMaterialBase;
+
+	UPROPERTY()
+		class UMaterialInstanceDynamic* BlinderMaterialInstance;
 
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 	float MaxTeleportDistance = 1000;
