@@ -12,6 +12,8 @@
 #include "Components/PostProcessComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Curves/CurveFloat.h"
+#include "MotionControllerComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -23,6 +25,14 @@ AVRCharacter::AVRCharacter()
 	VRRoot = CreateDefaultSubobject<USceneComponent>(TEXT("VRRoot"));
 	VRRoot->SetupAttachment(GetRootComponent());
 
+	LeftController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("LeftController"));
+	LeftController->SetupAttachment(VRRoot);
+	LeftController->SetTrackingSource(EControllerHand::Left);
+
+	RightController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("RightController"));
+	RightController->SetupAttachment(VRRoot);
+	RightController->SetTrackingSource(EControllerHand::Right);
+
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(VRRoot);
 
@@ -31,6 +41,7 @@ AVRCharacter::AVRCharacter()
 
 	PostProcessComponent = CreateDefaultSubobject<UPostProcessComponent>(TEXT("PostProcessComponent"));
 	PostProcessComponent->SetupAttachment(GetRootComponent());
+
 }
 
 // Called when the game starts or when spawned
@@ -49,8 +60,9 @@ void AVRCharacter::BeginPlay()
 void AVRCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	FVector ActorLoc = Camera->GetComponentLocation();
 
+	//Handle Player not being in the center of playspace
+	FVector ActorLoc = Camera->GetComponentLocation();
 	FVector NewCamOffset = Camera->GetComponentLocation() - GetActorLocation();
 	//stop it from moving in Z
 	NewCamOffset.Z = 0;
@@ -80,16 +92,19 @@ void AVRCharacter::MoveRight(float throttle) {
 }
 
 void AVRCharacter::UpdateDestinationMarker() {
-	
-	
+
 	FVector TeleportLoc;
-		if(FindTeleportDestination(TeleportLoc)){
-			DestinationMarker->SetVisibility(true);
-			DestinationMarker->SetWorldLocation(TeleportLoc);
-		}
-		else {
-			DestinationMarker->SetVisibility(false);
-		}
+
+	//if(FindTeleportDestination(TeleportLoc)){ 
+	//if (FindTeleportDestinationByHand(TeleportLoc)) {
+	if (FindParabolicTeleportDestinationByHand(TeleportLoc)) {
+
+		DestinationMarker->SetVisibility(true);
+		DestinationMarker->SetWorldLocation(TeleportLoc);
+	}
+	else {
+		DestinationMarker->SetVisibility(false);
+	}
 }
 
 void AVRCharacter::UpdateBlinders() {
@@ -150,6 +165,72 @@ bool AVRCharacter::FindTeleportDestination(FVector &OutLocation) {
 	FNavLocation NavLocation;
 
 	bool bOnNavMesh = navSystem->ProjectPointToNavigation(HitResult.Location, NavLocation, TeleportProjectionExtent);
+	if (!bOnNavMesh) {
+		return bOnNavMesh;
+	}
+
+	OutLocation = NavLocation.Location;
+	return bOnNavMesh && bHit;
+}
+
+bool AVRCharacter::FindTeleportDestinationByHand(FVector &OutLocation) {
+	FHitResult HitResult;
+
+	FVector Start = RightController->GetComponentLocation();
+	FVector Look = RightController->GetForwardVector();
+	Look - Look.RotateAngleAxis(45, RightController->GetRightVector());
+	FVector End = Start + Look * MaxTeleportDistance;
+
+	//DrawDebugLine(GetWorld(), Start, End, FColor(255, 0, 0));
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+	if (!bHit) {
+		return bHit;
+	}
+
+	const UNavigationSystemV1* navSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+	FNavLocation NavLocation;
+
+	bool bOnNavMesh = navSystem->ProjectPointToNavigation(HitResult.Location, NavLocation, TeleportProjectionExtent);
+	if (!bOnNavMesh) {
+		return bOnNavMesh;
+	}
+
+	OutLocation = NavLocation.Location;
+	return bOnNavMesh && bHit;
+}
+
+bool AVRCharacter::FindParabolicTeleportDestinationByHand(FVector &OutLocation) {
+	FHitResult HitResult;
+
+	FVector Start = RightController->GetComponentLocation();
+	FVector Look = RightController->GetForwardVector();
+	
+
+	FPredictProjectilePathParams Params(
+		TeleportProjectileRadius,
+		Start,
+		Look * TeleportProjectileSpeed,
+		TeleportSimulationTime,
+		ECollisionChannel::ECC_Visibility,
+		this	
+	);
+	Params.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+	//Note: This is a Hack to fix the bad collision meshes
+	Params.bTraceComplex = true;
+	FPredictProjectilePathResult Result;
+
+	
+
+	//DrawDebugLine(GetWorld(), Start, End, FColor(255, 0, 0));
+	bool bHit = UGameplayStatics::PredictProjectilePath(this, Params, Result);
+	if (!bHit) {
+		return bHit;
+	}
+
+	const UNavigationSystemV1* navSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(this);
+	FNavLocation NavLocation;
+
+	bool bOnNavMesh = navSystem->ProjectPointToNavigation(Result.HitResult.Location, NavLocation, TeleportProjectionExtent);
 	if (!bOnNavMesh) {
 		return bOnNavMesh;
 	}

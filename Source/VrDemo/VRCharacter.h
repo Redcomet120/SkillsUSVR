@@ -25,6 +25,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneComponent* VRRoot;
 
+	UPROPERTY()
+		class UMotionControllerComponent* LeftController;
+
+	UPROPERTY()
+		class UMotionControllerComponent* RightController;
+	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* DestinationMarker;
 
@@ -42,6 +49,15 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 	float MaxTeleportDistance = 1000;
+
+	UPROPERTY(EditAnywhere, Category = "Teleport")
+	float TeleportProjectileSpeed = 800;
+
+	UPROPERTY(EditAnywhere, Category = "Teleport")
+		float TeleportSimulationTime = 10;
+
+	UPROPERTY(EditAnywhere, Category = "Teleport")
+	float TeleportProjectileRadius = 10;
 
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 		float TeleportFadeTime = 2;
@@ -68,4 +84,7 @@ private:
 	FVector2D GetBlinderCenter();
 
 	bool FindTeleportDestination(FVector &OutLocation);
+	bool FindTeleportDestinationByHand(FVector &OutLocation);
+
+	bool FindParabolicTeleportDestinationByHand(FVector &OutLocation);
 };
