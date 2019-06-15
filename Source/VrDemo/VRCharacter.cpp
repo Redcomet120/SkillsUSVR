@@ -10,6 +10,7 @@
 #include "Components/CapsuleComponent.h"
 #include "NavigationSystem.h"
 #include "Components/PostProcessComponent.h"
+#include "Components/SplineComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Curves/CurveFloat.h"
 #include "MotionControllerComponent.h"
@@ -35,6 +36,9 @@ AVRCharacter::AVRCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(VRRoot);
+
+	TeleportPath = CreateDefaultSubobject<USplineComponent>(TEXT("TeleportPath"));
+	TeleportPath->SetupAttachment(RightController);
 
 	DestinationMarker = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DestinationMarker"));
 	DestinationMarker->SetupAttachment(GetRootComponent());
@@ -94,17 +98,33 @@ void AVRCharacter::MoveRight(float throttle) {
 void AVRCharacter::UpdateDestinationMarker() {
 
 	FVector TeleportLoc;
+	TArray<FVector> Path;
 
 	//if(FindTeleportDestination(TeleportLoc)){ 
 	//if (FindTeleportDestinationByHand(TeleportLoc)) {
-	if (FindParabolicTeleportDestinationByHand(TeleportLoc)) {
+	if (FindParabolicTeleportDestinationByHand(Path, TeleportLoc)) {
 
 		DestinationMarker->SetVisibility(true);
 		DestinationMarker->SetWorldLocation(TeleportLoc);
+		UpdateSpline(Path);
 	}
 	else {
 		DestinationMarker->SetVisibility(false);
 	}
+
+	
+}
+
+void AVRCharacter::UpdateSpline(TArray<FVector> &Path) {
+	TeleportPath->ClearSplinePoints(false);
+
+	for (int32 i = 0; i < Path.Num(); i++) {
+		
+		FVector LocalPos = TeleportPath->GetComponentTransform().InverseTransformPosition(Path[i]);
+		FSplinePoint Point(i, LocalPos, ESplinePointType::Curve);
+		TeleportPath->AddPoint(Point, false);
+	}
+	TeleportPath->UpdateSpline();
 }
 
 void AVRCharacter::UpdateBlinders() {
@@ -199,7 +219,7 @@ bool AVRCharacter::FindTeleportDestinationByHand(FVector &OutLocation) {
 	return bOnNavMesh && bHit;
 }
 
-bool AVRCharacter::FindParabolicTeleportDestinationByHand(FVector &OutLocation) {
+bool AVRCharacter::FindParabolicTeleportDestinationByHand(TArray<FVector>&OutPath, FVector &OutLocation) {
 	FHitResult HitResult;
 
 	FVector Start = RightController->GetComponentLocation();
@@ -217,9 +237,7 @@ bool AVRCharacter::FindParabolicTeleportDestinationByHand(FVector &OutLocation) 
 	Params.DrawDebugType = EDrawDebugTrace::ForOneFrame;
 	//Note: This is a Hack to fix the bad collision meshes
 	Params.bTraceComplex = true;
-	FPredictProjectilePathResult Result;
-
-	
+	FPredictProjectilePathResult Result;	
 
 	//DrawDebugLine(GetWorld(), Start, End, FColor(255, 0, 0));
 	bool bHit = UGameplayStatics::PredictProjectilePath(this, Params, Result);
@@ -234,7 +252,10 @@ bool AVRCharacter::FindParabolicTeleportDestinationByHand(FVector &OutLocation) 
 	if (!bOnNavMesh) {
 		return bOnNavMesh;
 	}
-
+	for (FPredictProjectilePathPointData PointData : Result.PathData) {
+		OutPath.Add(PointData.Location);
+	}
+	
 	OutLocation = NavLocation.Location;
 	return bOnNavMesh && bHit;
 }

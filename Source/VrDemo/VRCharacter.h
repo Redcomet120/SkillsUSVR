@@ -31,6 +31,8 @@ protected:
 	UPROPERTY()
 		class UMotionControllerComponent* RightController;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		class USplineComponent* TeleportPath;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* DestinationMarker;
@@ -76,6 +78,7 @@ private:
 	void MoveRight(float throttle);
 	
 	void UpdateDestinationMarker();
+	void UpdateSpline(TArray<FVector> &Path);
 
 	void BeginTeleport();
 	void EndTeleport();
@@ -86,5 +89,5 @@ private:
 	bool FindTeleportDestination(FVector &OutLocation);
 	bool FindTeleportDestinationByHand(FVector &OutLocation);
 
-	bool FindParabolicTeleportDestinationByHand(FVector &OutLocation);
+	bool FindParabolicTeleportDestinationByHand(TArray<FVector>&OutPath, FVector &OutLocation);
 };
