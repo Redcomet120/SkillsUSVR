@@ -11,6 +11,7 @@
 #include "NavigationSystem.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Curves/CurveFloat.h"
 #include "MotionControllerComponent.h"
@@ -46,6 +47,7 @@ AVRCharacter::AVRCharacter()
 	PostProcessComponent = CreateDefaultSubobject<UPostProcessComponent>(TEXT("PostProcessComponent"));
 	PostProcessComponent->SetupAttachment(GetRootComponent());
 
+	
 }
 
 // Called when the game starts or when spawned
@@ -57,7 +59,6 @@ void AVRCharacter::BeginPlay()
 		BlinderMaterialInstance = UMaterialInstanceDynamic::Create(BlinderMaterialBase, this);
 		PostProcessComponent->AddOrUpdateBlendable(BlinderMaterialInstance);
 	}
-	
 }
 
 // Called every frame
@@ -106,10 +107,13 @@ void AVRCharacter::UpdateDestinationMarker() {
 
 		DestinationMarker->SetVisibility(true);
 		DestinationMarker->SetWorldLocation(TeleportLoc);
-		UpdateSpline(Path);
+		DrawTeleportPath(Path);
 	}
 	else {
 		DestinationMarker->SetVisibility(false);
+
+		TArray<FVector> EmptyPath;
+		DrawTeleportPath(EmptyPath);
 	}
 
 	
@@ -125,6 +129,37 @@ void AVRCharacter::UpdateSpline(TArray<FVector> &Path) {
 		TeleportPath->AddPoint(Point, false);
 	}
 	TeleportPath->UpdateSpline();
+}
+
+void AVRCharacter::DrawTeleportPath(TArray<FVector> &Path) {
+	UpdateSpline(Path);
+
+	for (USplineMeshComponent* SplineMesh : TeleportPathMeshPool) {
+		SplineMesh->SetVisibility(false);
+	}
+
+	int32 SegmentNum = Path.Num() - 1;
+	for (int32 i = 0; i < SegmentNum; i++) {
+		
+		if (TeleportPathMeshPool.Num() <= i) {
+			USplineMeshComponent*  SplineMesh = NewObject<USplineMeshComponent>(this);
+			SplineMesh->SetMobility(EComponentMobility::Movable);
+			SplineMesh->AttachToComponent(TeleportPath, FAttachmentTransformRules::KeepRelativeTransform);
+			SplineMesh->SetStaticMesh(TeleportArchMesh);
+			SplineMesh->SetMaterial(0, TeleportArchMaterial);
+			SplineMesh->RegisterComponent();
+
+			TeleportPathMeshPool.Add(SplineMesh);
+		}
+		USplineMeshComponent* SplineMesh = TeleportPathMeshPool[i];
+		SplineMesh->SetVisibility(true);
+
+		FVector StartPos, EndPos, StartTan, EndTan;
+		TeleportPath->GetLocalLocationAndTangentAtSplinePoint(i, StartPos, StartTan);
+		TeleportPath->GetLocalLocationAndTangentAtSplinePoint(i, EndPos, EndTan);
+		SplineMesh->SetStartAndEnd(StartPos, StartTan, EndPos, EndTan);
+
+	}
 }
 
 void AVRCharacter::UpdateBlinders() {
@@ -234,7 +269,8 @@ bool AVRCharacter::FindParabolicTeleportDestinationByHand(TArray<FVector>&OutPat
 		ECollisionChannel::ECC_Visibility,
 		this	
 	);
-	Params.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+	//Params.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+
 	//Note: This is a Hack to fix the bad collision meshes
 	Params.bTraceComplex = true;
 	FPredictProjectilePathResult Result;	

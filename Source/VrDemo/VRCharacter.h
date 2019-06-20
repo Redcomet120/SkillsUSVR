@@ -37,6 +37,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* DestinationMarker;
 
+	UPROPERTY(VisibleAnywhere)
+	TArray<class USplineMeshComponent*> TeleportPathMeshPool;
+
+	UPROPERTY(EditDefaultsOnly)
+		class UStaticMesh* TeleportArchMesh;
+
+	UPROPERTY(EditDefaultsOnly)
+		class UMaterialInterface* TeleportArchMaterial;
+
+
 	UPROPERTY()
 		class UPostProcessComponent* PostProcessComponent;
 
@@ -79,6 +89,7 @@ private:
 	
 	void UpdateDestinationMarker();
 	void UpdateSpline(TArray<FVector> &Path);
+	void DrawTeleportPath(TArray<FVector> &Path);
 
 	void BeginTeleport();
 	void EndTeleport();
